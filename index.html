@@ -1498,7 +1498,8 @@
       return JSON.parse(JSON.stringify(defaultProgress));
     }
 
-    // 针对 iPhone 上部分文档容器 WebView 的触摸行为做额外保护，尽量避免单击时触发容器级全屏切换。
+    // 针对 iPhone 上部分文档容器 WebView 的触摸行为做额外保护，
+    // 这里只拦截双指缩放和非交互区域的双击缩放，避免把正常点按一起吞掉。
     function installIosTouchGuard() {
       const userAgent = navigator.userAgent || '';
       const isIPhoneWebKit = /iPhone/.test(userAgent) && /AppleWebKit/.test(userAgent);
@@ -1513,14 +1514,6 @@
         return Boolean(target && target.closest && target.closest(interactiveSelector));
       }
 
-      ['touchstart', 'touchend', 'click'].forEach((eventName) => {
-        document.addEventListener(eventName, (event) => {
-          if (isInteractiveTarget(event.target)) {
-            event.stopPropagation();
-          }
-        }, true);
-      });
-
       document.addEventListener('touchstart', (event) => {
         if (event.touches.length > 1) {
           event.preventDefault();
@@ -1529,7 +1522,7 @@
 
       document.addEventListener('touchend', (event) => {
         const now = Date.now();
-        if (now - lastTouchEndAt < 320) {
+        if (!isInteractiveTarget(event.target) && now - lastTouchEndAt < 320) {
           event.preventDefault();
         }
         lastTouchEndAt = now;
